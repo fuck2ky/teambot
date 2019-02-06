@@ -1,2 +1,4 @@
 venv/
 cwcbot.egg-info/
+.idea
+cwcbot/__pycache__
