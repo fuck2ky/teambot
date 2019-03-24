@@ -1,4 +1,4 @@
-#! /bin/bash -x
+#! /bin/bash
 
 DIR=$(realpath $(dirname run.sh ))
 APP_NAME=$(basename ${DIR})
