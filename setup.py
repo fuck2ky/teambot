@@ -8,4 +8,4 @@ setup(name='cwcbot',
       author_email='matteo.vettosi@gmail.com',
       license='MIT',
       packages=['cwcbot'],
-      zip_safe=False, install_requires=['discord'])
+      zip_safe=False)
