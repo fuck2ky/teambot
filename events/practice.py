@@ -9,14 +9,14 @@ class Practice(Event):
 
     # Override the run() method
     # It will be called once every {interval_minutes} minutes
-    async def run(self, client, config):
+    async def run(self, client):
         now = datetime.now()
 
         if now.weekday() == 1 or now.weekday() == 3:  # Tuesday and Thursday
             if now.hour == 15 or now.hour == 19:
-                server = client.get_guild(config['server_id'])
-                tw_role = server.get_role(config['tw_role_id'])
-                cw_role = server.get_role(config['cw_role_id'])
+                server = client.get_guild(client.config['server_id'])
+                tw_role = server.get_role(client.config['tw_role_id'])
+                cw_role = server.get_role(client.config['cw_role_id'])
 
                 msg = f"{tw_role.mention} {cw_role.mention} "
                 msg += 'EU' if now.hour == 15 else 'US'

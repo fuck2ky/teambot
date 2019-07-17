@@ -1,6 +1,7 @@
-from discord.ext import commands
-import discord
 import calendar
+
+import discord
+from discord.ext import commands
 
 
 class ScheduleCog(commands.Cog):
@@ -16,9 +17,6 @@ class ScheduleCog(commands.Cog):
                 await schedule_day(context, named_day)
         else:
             await schedule_weekend(context)
-
-# Periodic tasks
-
 
 # Module level functions
 async def schedule_weekend(context):  # TODO switch from context to channel
