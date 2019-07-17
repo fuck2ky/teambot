@@ -16,8 +16,9 @@ sched = AsyncIOScheduler()
 
 
 # Load configurations
+dirname = os.path.dirname(__file__)
 CONFIG_FILE_NAME = 'config.json'
-config_file_path = os.path.abspath(CONFIG_FILE_NAME)
+config_file_path = os.path.abspath(f"{dirname}/../{CONFIG_FILE_NAME}")
 with open(config_file_path) as config_file:
     config = json.load(config_file)
 

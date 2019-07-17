@@ -5,3 +5,4 @@ cwcbot/__pycache__
 cwcbot/cogs/__pycache__
 config.json
 config.json.cwc
+cwcbot/events/__pycache__
