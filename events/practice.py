@@ -1,4 +1,4 @@
-from cwcbot.events.base_event import Event
+from events.base_event import Event
 from datetime import datetime
 
 

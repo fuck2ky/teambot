@@ -3,8 +3,8 @@
 from discord.ext.commands import Bot
 from datetime import date
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from cwcbot.events.base_event import Event
-from cwcbot.events import *
+from events.base_event import Event
+from events import *
 import json
 import os
 import sys
@@ -18,14 +18,14 @@ sched = AsyncIOScheduler()
 # Load configurations
 dirname = os.path.dirname(__file__)
 CONFIG_FILE_NAME = 'config.json'
-config_file_path = os.path.abspath(f"{dirname}/../{CONFIG_FILE_NAME}")
+config_file_path = os.path.abspath(f"{dirname}/{CONFIG_FILE_NAME}")
 with open(config_file_path) as config_file:
     config = json.load(config_file)
 
 
 # Instantiate bot
-print("\nLoading commands...")
-initial_extensions = ['cwcbot.cogs.schedule']
+print("Loading commands...")
+initial_extensions = ['cogs.schedule']
 client = Bot(command_prefix='!')
 n_cmd = 0
 for extension in initial_extensions:
@@ -39,7 +39,7 @@ print(f"{n_cmd} commands loaded")
 
 
 # Load all events
-print("\nLoading events...")
+print("Loading events...")
 n_ev = 0
 for ev in Event.__subclasses__():
     event = ev()
@@ -53,11 +53,11 @@ print(f"{n_ev} events loaded")
 # Startup
 @client.event
 async def on_ready():
-    print('\nLogged in as')
+    print('Logged in as')
     print(client.user.name)
     print(client.user.id)
     print('------')
 
 
-def run_bot():
+if __name__ == "__main__":
     client.run(config['token'])
