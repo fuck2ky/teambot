@@ -4,35 +4,20 @@ import asyncio
 import datetime
 import json
 import logging
+import os
 from pathlib import Path
 
 import discord
 from discord.ext import commands
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from events.base_event import Event
-from events import *
+
+dirname = os.path.dirname(__file__)
 
 
 def config_load():
-    with open('data/config.json', 'r', encoding='utf-8') as doc:
+    with open(f"{dirname}/data/config.json", 'r', encoding='utf-8') as doc:
         #  Please make sure encoding is correct, especially after editing the config file
         return json.load(doc)
-
-
-async def run():
-    """
-    Where the bot gets started. If you wanted to create an database connection pool or other session for the bot to use,
-    it's recommended that you create it here and pass it to the bot as a kwarg.
-    """
-
-    config = config_load()
-    bot = Bot(config=config,
-              description=config['description'])
-    try:
-        await bot.start(config['token'])
-    except KeyboardInterrupt:
-        await bot.logout()
 
 
 class Bot(commands.Bot):
@@ -73,8 +58,9 @@ class Bot(commands.Bot):
         """
         # Load all .py files in /cogs/ as cog extensions
         await self.wait_until_ready()
-        await asyncio.sleep(1)  # ensure that on_ready has completed and finished printing
-        cogs = [x.stem for x in Path('cogs').glob('*.py')]
+        # ensure that on_ready has completed and finished printing
+        await asyncio.sleep(1)
+        cogs = [x.stem for x in Path(f"{dirname}/cogs").glob('*.py')]
         for extension in cogs:
             try:
                 self.load_extension(f'cogs.{extension}')
@@ -83,14 +69,6 @@ class Bot(commands.Bot):
                 error = f'{extension}\n {type(e).__name__} : {e}'
                 print(f'failed to load extension {error}')
             print('-' * 10)
-
-        # Load all events in /event/
-        sched = AsyncIOScheduler()
-        for ev in Event.__subclasses__():
-            event = ev()
-            sched.add_job(event.run, 'interval', (self,),
-                          minutes=event.interval_minutes)
-        sched.start()
 
     async def on_ready(self):
         """
@@ -116,7 +94,6 @@ class Bot(commands.Bot):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run())
+    config = config_load()
+    bot = Bot(config=config, description=config['description'])
+    bot.run(config['token'])

@@ -6,3 +6,4 @@ cogs/__pycache__
 config.json
 config.json.cwc
 events/__pycache__
+data/config.json

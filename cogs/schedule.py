@@ -1,12 +1,18 @@
 import calendar
+from datetime import datetime
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 
 class ScheduleCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.config = bot.config
+        self.practice.start()
+
+    def cog_unload(self):
+        self.practice.cancel()
 
     @commands.command(name='schedule', pass_context=True)
     async def schedule_match(self, context, *args):
@@ -17,6 +23,25 @@ class ScheduleCog(commands.Cog):
                 await schedule_day(context, named_day)
         else:
             await schedule_weekend(context)
+
+    @tasks.loop(minutes=5.0)
+    async def practice(self):
+        now = datetime.now()
+
+        if now.weekday() == 1 or now.weekday() == 3:  # Tuesday and Thursday
+            if now.hour == 15 or now.hour == 19:
+                print(str(now) + f" triggering practice post")
+                server = self.bot.get_guild(self.config['server_id'])
+                tw_role = server.get_role(self.config['tw_role_id'])
+                cw_role = server.get_role(self.config['cw_role_id'])
+
+                msg = f"{tw_role.mention} {cw_role.mention} "
+                msg += 'EU' if now.hour == 15 else 'US'
+                msg += ' Practice time!'
+
+                channel = self.bot.get_channel(config['practice_channel_id'])
+                await channel.send(msg)
+
 
 # Module level functions
 async def schedule_weekend(context):  # TODO switch from context to channel
