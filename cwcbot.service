@@ -1,0 +1,9 @@
+[Unit]
+Description=CWC Bot
+
+[Service]
+User=drackmord92
+ExecStart=/usr/bin/python3.6 -u /home/drackmord92/bots/cwcbot/main.py
+
+[Install]
+WantedBy=multi-user.target
