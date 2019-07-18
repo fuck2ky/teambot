@@ -31,7 +31,7 @@ class ScheduleCog(commands.Cog):
         tz = timezone('EST')
         now = datetime.now(tz)
 
-        if is_practice_time(now):
+        if self.is_practice_time(now):
             print(str(now) + f" triggering practice post")
             server = self.bot.get_guild(self.config['server_id'])
             tw_role = server.get_role(self.config['tw_role_id'])
