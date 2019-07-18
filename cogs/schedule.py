@@ -26,10 +26,13 @@ class ScheduleCog(commands.Cog):
 
     @tasks.loop(minutes=5.0)
     async def practice(self):
-        now = datetime.now()
+        from datetime import datetime
+        from pytz import timezone
+        tz = timezone('EST')
+        now = datetime.now(tz)
 
         if now.weekday() == 1 or now.weekday() == 3:  # Tuesday and Thursday
-            if now.hour == 15 or now.hour == 19 or now.hour == 20:
+            if now.hour == 15 or now.hour == 19:
                 print(str(now) + f" triggering practice post")
                 server = self.bot.get_guild(self.config['server_id'])
                 tw_role = server.get_role(self.config['tw_role_id'])
