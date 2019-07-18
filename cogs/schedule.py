@@ -31,20 +31,22 @@ class ScheduleCog(commands.Cog):
         tz = timezone('EST')
         now = datetime.now(tz)
 
-        if now.weekday() == 1 or now.weekday() == 3:  # Tuesday and Thursday
-            if now.hour == 15 or now.hour == 19:
-                print(str(now) + f" triggering practice post")
-                server = self.bot.get_guild(self.config['server_id'])
-                tw_role = server.get_role(self.config['tw_role_id'])
-                cw_role = server.get_role(self.config['cw_role_id'])
+        if is_practice_time(now):
+            print(str(now) + f" triggering practice post")
+            server = self.bot.get_guild(self.config['server_id'])
+            tw_role = server.get_role(self.config['tw_role_id'])
+            cw_role = server.get_role(self.config['cw_role_id'])
 
-                msg = f"{tw_role.mention} {cw_role.mention} "
-                msg += 'EU' if now.hour == 15 else 'US'
-                msg += ' Practice time!'
+            msg = f"{tw_role.mention} {cw_role.mention} "
+            msg += 'EU' if now.hour == 15 else 'US'
+            msg += ' Practice time!'
 
-                channel = self.bot.get_channel(
-                    self.config['practice_channel_id'])
-                await channel.send(msg)
+            channel = self.bot.get_channel(
+                self.config['practice_channel_id'])
+            await channel.send(msg)
+
+    def is_practice_time(now):
+        return (now.weekday() == 1 or now.weekday() == 3) and (now.hour == 15 or now.hour == 19) and (0 <= now.minute <= 5)
 
 
 # Module level functions
