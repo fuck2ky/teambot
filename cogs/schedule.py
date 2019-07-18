@@ -45,7 +45,7 @@ class ScheduleCog(commands.Cog):
                 self.config['practice_channel_id'])
             await channel.send(msg)
 
-    def is_practice_time(now):
+    def is_practice_time(self, now):
         return (now.weekday() == 1 or now.weekday() == 3) and (now.hour == 15 or now.hour == 19) and (0 <= now.minute <= 5)
 
 
