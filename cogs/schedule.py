@@ -29,7 +29,7 @@ class ScheduleCog(commands.Cog):
         now = datetime.now()
 
         if now.weekday() == 1 or now.weekday() == 3:  # Tuesday and Thursday
-            if now.hour == 15 or now.hour == 19:
+            if now.hour == 15 or now.hour == 19 or now.hour == 20:
                 print(str(now) + f" triggering practice post")
                 server = self.bot.get_guild(self.config['server_id'])
                 tw_role = server.get_role(self.config['tw_role_id'])
@@ -39,7 +39,8 @@ class ScheduleCog(commands.Cog):
                 msg += 'EU' if now.hour == 15 else 'US'
                 msg += ' Practice time!'
 
-                channel = self.bot.get_channel(config['practice_channel_id'])
+                channel = self.bot.get_channel(
+                    self.config['practice_channel_id'])
                 await channel.send(msg)
 
 
