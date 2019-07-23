@@ -11,9 +11,11 @@ class ScheduleCog(commands.Cog):
         self.bot = bot
         self.config = bot.config
         self.practice.start()
+        self.post_schedule.start()
 
     def cog_unload(self):
         self.practice.cancel()
+        self.post_schedule.cancel()
 
     @commands.command(name='schedule', pass_context=True)
     async def schedule_match(self, context, *args):
