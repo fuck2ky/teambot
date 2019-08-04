@@ -1,6 +1,7 @@
 import calendar
-from datetime import datetime
-from pytz import timezone
+import pytz
+import datetime
+import tzlocal
 
 import discord
 from discord.ext import commands, tasks
@@ -10,12 +11,10 @@ class ScheduleCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = bot.config
-        self.practice.start()
-        self.post_schedule.start()
+        self.cwcschedules.start()
 
     def cog_unload(self):
-        self.practice.cancel()
-        self.post_schedule.cancel()
+        self.cwcschedules.cancel()
 
     @commands.command(name='schedule', pass_context=True)
     async def schedule_match(self, context, *args):
@@ -29,11 +28,16 @@ class ScheduleCog(commands.Cog):
             await schedule_weekend(channel)
 
     @tasks.loop(minutes=5.0)
-    async def practice(self):
-        tz = timezone('EST')
-        now = datetime.now(tz)
+    async def cwcschedules(self):
+        now = get_est_time()
+        await self.check_practice_session(now)
+        await self.check_match_schedule(now)
 
-        if self.is_practice_time(now):
+    async def check_practice_session(self, now):
+        is_us_practice = (now.weekday() == 1 and now.hour == 15)
+        is_eu_practice = (now.weekday() == 3 and now.hour == 19)
+
+        if (is_us_practice or is_eu_practice) and (0 <= now.minute <= 5):
             print(str(now) + f" triggering practice post")
             server = self.bot.get_guild(self.config['server_id'])
             tw_role = server.get_role(self.config['tw_role_id'])
@@ -42,17 +46,15 @@ class ScheduleCog(commands.Cog):
             msg = f"{tw_role.mention} {cw_role.mention} "
             msg += 'EU' if now.hour == 15 else 'US'
             msg += ' Practice time!'
+            msg += '\n\n Please join the call at: https://hangouts.google.com/call/QCQA0ehAWFu_nSYJAdzMAEEI'
 
-            channel = self.bot.get_channel(
-                self.config['practice_channel_id'])
+            channel = self.bot.get_channel(self.config['practice_channel_id'])
             await channel.send(msg)
 
-    @tasks.loop(minutes=5.0)
-    async def post_schedule(self):
-        tz = timezone('EST')
-        now = datetime.now(tz)
+    async def check_match_schedule(self, now):
+        is_match_schedule_time = (now.weekday() == 0 and now.hour == 0)
 
-        if self.is_post_schedule_time(now):
+        if is_match_schedule_time and (0 <= now.minute <= 5):
             print(str(now) + f" triggering schedule post")
             server = self.bot.get_guild(self.config['server_id'])
 
@@ -66,14 +68,16 @@ class ScheduleCog(commands.Cog):
             await schedule_weekend(cw_news)
             await cw_news.send(f"{cw_role.mention} please react according to your availability")
 
-    def is_practice_time(self, now):
-        return (now.weekday() == 1 or now.weekday() == 3) and (now.hour == 15 or now.hour == 19) and (0 <= now.minute <= 5)
-
-    def is_post_schedule_time(now):
-        return now.weekday() == 0 and now.hour == 0 and (0 <= now.minute <= 5)
-
 
 # Module level functions
+def get_est_time():
+    tz_name = tzlocal.get_localzone().zone
+    local_tz = pytz.timezone(tz_name)
+    local_time = local_tz.localize(datetime.datetime.now())
+    est_tz = pytz.timezone('US/Eastern')
+    return local_time.astimezone(est_tz)
+
+
 async def schedule_weekend(channel):
     await schedule_day(channel, calendar.day_name[4], 12)
     for day in range(5, 7):
@@ -87,10 +91,10 @@ async def schedule_day(channel, day, start=0):
 
     for time in times:
         full_time = (
-            f"EST {t_add(time, 0)} - {t_add(time, 3)}"
-            f" | UK  {t_add(time, 5)} - {t_add(time, 8)}"
-            f" | EU  {t_add(time, 6)} - {t_add(time, 9)}"
-            f" | JAP {t_add(time, 15)} - {t_add(time, 18)}"
+            f"{t_add(time, 0)} - {t_add(time, 3)} EST"
+            f" | {t_add(time, 5)} - {t_add(time, 8)} UK"
+            f" | {t_add(time, 6)} - {t_add(time, 9)} EU"
+            f" | {t_add(time, 15)} - {t_add(time, 18)} JAP"
         )
         message = await channel.send(full_time)
         await message.add_reaction('\N{THUMBS UP SIGN}')
