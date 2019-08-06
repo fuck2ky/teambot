@@ -40,8 +40,8 @@ class ScheduleCog(commands.Cog):
         if (is_us_practice or is_eu_practice) and (0 <= now.minute <= 4):
             print(str(now) + f" triggering practice post")
             server = self.bot.get_guild(self.config['server_id'])
-            tw_role = server.get_role(self.config['tw_role_id'])
-            cw_role = server.get_role(self.config['cw_role_id'])
+            tw_role = server.get_role(self.config['tw_roaster_role'])
+            cw_role = server.get_role(self.config['cw_roaster_role'])
 
             msg = f"{tw_role.mention} {cw_role.mention} "
             msg += 'EU' if now.hour == 15 else 'US'
