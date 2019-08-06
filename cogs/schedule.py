@@ -34,8 +34,8 @@ class ScheduleCog(commands.Cog):
         await self.check_match_schedule(now)
 
     async def check_practice_session(self, now):
-        is_us_practice = (now.weekday() == 1 and now.hour == 15)
-        is_eu_practice = (now.weekday() == 3 and now.hour == 19)
+        is_us_practice = (now.weekday() == 1 and now.hour == 19)
+        is_eu_practice = (now.weekday() == 3 and now.hour == 15)
 
         if (is_us_practice or is_eu_practice) and (0 <= now.minute <= 5):
             print(str(now) + f" triggering practice post")
