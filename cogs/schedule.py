@@ -37,7 +37,7 @@ class ScheduleCog(commands.Cog):
         is_us_practice = (now.weekday() == 1 and now.hour == 19)
         is_eu_practice = (now.weekday() == 3 and now.hour == 15)
 
-        if (is_us_practice or is_eu_practice) and (0 <= now.minute <= 5):
+        if (is_us_practice or is_eu_practice) and (0 <= now.minute <= 4):
             print(str(now) + f" triggering practice post")
             server = self.bot.get_guild(self.config['server_id'])
             tw_role = server.get_role(self.config['tw_role_id'])
