@@ -37,7 +37,7 @@ class ScheduleCog(commands.Cog):
         is_us_practice = (now.weekday() == 1 and now.hour == 19)
         is_eu_practice = (now.weekday() == 3 and now.hour == 15)
 
-        if (is_us_practice or is_eu_practice) and (0 <= now.minute <= 4):
+        if (is_us_practice or is_eu_practice) and is_hour_starting(now.minute):
             print(str(now) + f" triggering practice post")
             server = self.bot.get_guild(self.config['server_id'])
             tw_role = server.get_role(self.config['tw_roaster_role'])
@@ -55,7 +55,7 @@ class ScheduleCog(commands.Cog):
     async def check_match_schedule(self, now):
         is_match_schedule_time = (now.weekday() == 0 and now.hour == 0)
 
-        if is_match_schedule_time and (0 <= now.minute <= 4):
+        if is_match_schedule_time and is_hour_starting(now.minute):
             print(str(now) + f" triggering schedule post")
             server = self.bot.get_guild(self.config['server_id'])
 
@@ -71,6 +71,10 @@ class ScheduleCog(commands.Cog):
 
 
 # Module level functions
+def is_hour_starting(min):
+    return (0 <= min <= 4)
+
+
 def get_est_time():
     tz_name = tzlocal.get_localzone().zone
     local_tz = pytz.timezone(tz_name)
