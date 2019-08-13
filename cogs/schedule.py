@@ -47,6 +47,7 @@ class ScheduleCog(commands.Cog):
             msg += 'EU' if now.hour == 15 else 'US'
             msg += ' Practice time!'
             msg += '\n\n Please join the call at: https://hangouts.google.com/call/QCQA0ehAWFu_nSYJAdzMAEEI'
+            msg += '\n\n Also please use this sheet to see what MU we need to practice and add data that you collect during this practice!\nhttps://docs.google.com/spreadsheets/d/1iMFQ9DF_ITt4Cu4EZlx-PydP6QSAlinQ1UNeKBl1KE8/edit?ouid=112029972090718990319&usp=sheets_home&ths=true'
 
             channel = self.bot.get_channel(self.config['practice_channel_id'])
             await channel.send(msg)
@@ -54,7 +55,7 @@ class ScheduleCog(commands.Cog):
     async def check_match_schedule(self, now):
         is_match_schedule_time = (now.weekday() == 0 and now.hour == 0)
 
-        if is_match_schedule_time and (0 <= now.minute <= 5):
+        if is_match_schedule_time and (0 <= now.minute <= 4):
             print(str(now) + f" triggering schedule post")
             server = self.bot.get_guild(self.config['server_id'])
 
