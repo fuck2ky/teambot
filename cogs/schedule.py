@@ -7,6 +7,11 @@ import discord
 from discord.ext import commands, tasks
 
 
+CWC_META_SHEET = 'https://docs.google.com/spreadsheets/d/1n_9scATgcWFfoxNBWVQTZ8PALbaevAtCHfysQ1yM3EU/edit?usp=sharing'
+TW_PREPARATION_SHEET = 'https://docs.google.com/spreadsheets/d/1o_wi1nGPKwZgiuUWkez8ObEth0Z2IwD5LhgWTTBIgJA/edit?usp=sharing'
+CW_PREPARATION_SHEET = 'https://docs.google.com/spreadsheets/d/1AYYdV-W-MJpaasRjSfHHIHm8pOPWq-2Ee41IaJs8wEA/edit?usp=sharing'
+
+
 class ScheduleCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -44,10 +49,11 @@ class ScheduleCog(commands.Cog):
             cw_role = server.get_role(self.config['cw_roaster_role'])
 
             msg = f"{tw_role.mention} {cw_role.mention} "
-            msg += 'EU' if now.hour == 15 else 'US'
+            msg += 'EU' if is_eu_practice else 'US'
             msg += ' Practice time!'
             msg += '\n\n Please join the call at: https://hangouts.google.com/call/QCQA0ehAWFu_nSYJAdzMAEEI'
-            msg += '\n\n Also please use this sheet to see what MU we need to practice and add data that you collect during this practice!\nhttps://docs.google.com/spreadsheets/d/1iMFQ9DF_ITt4Cu4EZlx-PydP6QSAlinQ1UNeKBl1KE8/edit?ouid=112029972090718990319&usp=sheets_home&ths=true'
+            msg += '\n\n You can use the Google Sheet pinned in the TW and CW general channels to plan the next Match.\nWhile doing that, remember to keep an eye on our meta analysis sheet here: ' + CWC_META_SHEET
+            msg += '\nYou can suggest modifications by adding comments on the sheet.'
 
             channel = self.bot.get_channel(self.config['practice_channel_id'])
             await channel.send(msg)
