@@ -1,4 +1,4 @@
-# cwcbot
+# teambot
 
 Discord bot written in python to provide functionalities for Duel Links team servers.
 Currently, the bot includes the following features:
