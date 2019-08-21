@@ -1,6 +1,6 @@
 from tinydb import TinyDB
 
-DB_FILE = 'db.json'
+DB_FILE = 'data/db.json'
 this = sys.modules[__name__]
 
 

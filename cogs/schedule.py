@@ -16,10 +16,42 @@ class ScheduleCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = bot.config
-        self.cwcschedules.start()
+        self.taskscheck.start()
 
     def cog_unload(self):
-        self.cwcschedules.cancel()
+        self.taskscheck.cancel()
+
+    @commands.command(pass_context=True)
+    async def newschedulecheck(self, context, weekdayname='', time='', *, args=''):
+        message = context.message
+        await message.delete()
+
+        channel = message.channel
+
+        if weekdayname == '' or time == '':
+            await channel.send(f"Oops! The weekday and the time are required arguments, please try again")
+            return
+
+        # Check weekeday
+        try:
+            weekdayname = weekdayname.capitalize()
+        except:
+            await channel.send(f"Oops! `{weekdayname}` doesn't look like a week day name, please try again")
+            return
+        if weekdayname in calendar.day_name[:]:
+            weekday = calendar.day_name[:].index(weekdayname)
+        elif weekdayname in calendar.day_abbr[:]:
+            weekday = calendar.day_abbr[:].index(weekdayname)
+        else:
+            await channel.send(f"Oops! `{weekdayname}` is not a full week day name nor an abbreviated version, did you mispell it?")
+            return
+
+        # Check time
+        if not time.isdigit() or int(time) not in range(0, 24):
+            await channel.send(f"Oops! `{time}` is not a proper hour number in 24h format, please try again")
+            return
+
+        await channel.send(f"Setting a schedule check on `{weekdayname}` at `{time}:00` with the following message:\n{args}")
 
     @commands.command(name='schedule', pass_context=True)
     async def schedule_match(self, context, *args):
@@ -33,7 +65,7 @@ class ScheduleCog(commands.Cog):
             await schedule_weekend(channel)
 
     @tasks.loop(minutes=5.0)
-    async def cwcschedules(self):
+    async def taskscheck(self):
         now = get_est_time()
         await self.check_practice_session(now)
         await self.check_match_schedule(now)
