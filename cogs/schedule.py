@@ -3,6 +3,8 @@ import pytz
 import datetime
 import tzlocal
 
+import persistence
+
 import discord
 from discord.ext import commands, tasks
 
@@ -51,7 +53,9 @@ class ScheduleCog(commands.Cog):
             await channel.send(f"Oops! `{time}` is not a proper hour number in 24h format, please try again")
             return
 
-        await channel.send(f"Setting a schedule check on `{weekdayname}` at `{time}:00` with the following message:\n{args}")
+        persistence.create_ping(
+            channel.id, channel.guild.id, weekday, time, args)
+        await channel.send(f"Setting a schedule check on `{calendar.day_name[weekday]}` at `{time}:00` with the following message:\n{args}")
 
     @commands.command(name='schedule', pass_context=True)
     async def schedule_match(self, context, *args):
