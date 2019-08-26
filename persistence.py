@@ -1,4 +1,5 @@
 import sys
+from enum import IntEnum
 from pprint import pprint
 from tinydb import TinyDB, Query
 
@@ -17,36 +18,71 @@ def init():
                 'channel_id': '123456',
                 'weekday': 0,
                 'time': 15,
-                'message': '...'
+                'message': '...',
+                'add_schedule': False
             }
         ]
     }
     '''
     this.pings = this.db.table('pings')
 
+    '''
+    {
+        '<config_name>': <config_value>
+    }
+    '''
+    this.config = this.db.table('config')
+
 
 init()
 
 
+class ConfigName(IntEnum):
+    PINGS = 1
+
+
 # APIs
-def create_ping(server_id, channel_id, weekday, time, msg):
-    id = pings.insert(
+def create_ping(server_id, channel_id, weekday, hour, minute, msg, add_schedule):
+    ping_id = this.pings.insert(
         {
             'server_id': server_id,
             'channel_id': channel_id,
-            'weekday': weekday,
-            'time': time,
-            'message': msg
+            'weekday': int(weekday),
+            'hour': int(hour),
+            'minute': int(minute),
+            'message': msg,
+            'add_schedule': add_schedule
         }
     )
     print(
-        f'\nCreated a schedule check with id {id} on {weekday} at {time}:00 with the following message: \n{msg}')
+        f'\nCreated a schedule check with id {ping_id} on {weekday} at {hour}:{minute} with the following message:'
+        f'\n{msg}')
     db_dump()
+
+
+def get_pings():
+    return this.pings.all()
+
+
+def set_config(config_name, config_key, config_value):
+    this.config.upsert(
+        {
+            'config_name': config_name,
+            config_key: config_value
+        },
+        Query().config_name == ConfigName.PINGS
+    )
+    db_dump()
+
+
+def get_config(config_name):
+    return this.config.get(Query().config_name == config_name)
 
 
 # Utils
 def db_dump():
-    print('Db Dump:')
-    for srv in db.tables():
-        print(f'Database [{srv}]:')
-        pprint(db.table(srv).all())
+    print('\nDb Dump:')
+    for inner_db in this.db.tables():
+        print(f'Database [{inner_db}]:')
+        pprint(this.db.table(inner_db).all())
+        print('')

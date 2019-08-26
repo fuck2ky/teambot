@@ -1,8 +1,4 @@
 {
   "token": "",
-  "description": "A bot for the CwC duel links team",
-  "server_id": 0,
-  "practice_channel_id": 0,
-  "tw_role_id": 0,
-  "cw_role_id": 0
+  "description": "A bot for the CwC duel links team"
 }

@@ -1,17 +1,14 @@
 import calendar
-import pytz
 import datetime
+from pprint import pprint
+
+import pytz
 import tzlocal
+from discord.ext import commands, tasks
 
 import persistence
 
-import discord
-from discord.ext import commands, tasks
-
-
-CWC_META_SHEET = 'https://docs.google.com/spreadsheets/d/1n_9scATgcWFfoxNBWVQTZ8PALbaevAtCHfysQ1yM3EU/edit?usp=sharing'
-TW_PREPARATION_SHEET = 'https://docs.google.com/spreadsheets/d/1o_wi1nGPKwZgiuUWkez8ObEth0Z2IwD5LhgWTTBIgJA/edit?usp=sharing'
-CW_PREPARATION_SHEET = 'https://docs.google.com/spreadsheets/d/1AYYdV-W-MJpaasRjSfHHIHm8pOPWq-2Ee41IaJs8wEA/edit?usp=sharing'
+TASKS_LOOP_FREQ = 60.0
 
 
 class ScheduleCog(commands.Cog):
@@ -23,42 +20,32 @@ class ScheduleCog(commands.Cog):
     def cog_unload(self):
         self.taskscheck.cancel()
 
+    @tasks.loop(seconds=TASKS_LOOP_FREQ)
+    async def taskscheck(self):
+        now = get_localized_now()
+        await check_pings(self.bot, now)
+
     @commands.command(pass_context=True)
-    async def newschedulecheck(self, context, weekdayname='', time='', *, args=''):
-        message = context.message
-        await message.delete()
-
-        channel = message.channel
-
-        if weekdayname == '' or time == '':
-            await channel.send(f"Oops! The weekday and the time are required arguments, please try again")
-            return
-
-        # Check weekeday
+    async def timezone(self, context, timezone=''):
         try:
-            weekdayname = weekdayname.capitalize()
-        except:
-            await channel.send(f"Oops! `{weekdayname}` doesn't look like a week day name, please try again")
-            return
-        if weekdayname in calendar.day_name[:]:
-            weekday = calendar.day_name[:].index(weekdayname)
-        elif weekdayname in calendar.day_abbr[:]:
-            weekday = calendar.day_abbr[:].index(weekdayname)
-        else:
-            await channel.send(f"Oops! `{weekdayname}` is not a full week day name nor an abbreviated version, did you mispell it?")
-            return
+            pytz.timezone(timezone)
+            persistence.set_config(
+                persistence.ConfigName.PINGS, 'timezone', timezone)
+        except pytz.exceptions.UnknownTimeZoneError:
+            await context.send(
+                f'Sorry, the timezone {timezone} is not valid. Choose one from '
+                f'https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568')
 
-        # Check time
-        if not time.isdigit() or int(time) not in range(0, 24):
-            await channel.send(f"Oops! `{time}` is not a proper hour number in 24h format, please try again")
-            return
+    @commands.command(pass_context=True)
+    async def addschedule(self, context, weekdayname='', hour='', minute='', *, args=''):
+        await create_ping(context, weekdayname, hour, minute, args, True)
 
-        persistence.create_ping(
-            channel.id, channel.guild.id, weekday, time, args)
-        await channel.send(f"Setting a schedule check on `{calendar.day_name[weekday]}` at `{time}:00` with the following message:\n{args}")
+    @commands.command(pass_context=True)
+    async def addping(self, context, weekdayname='', hour='', minute='', *, args=''):
+        await create_ping(context, weekdayname, hour, minute, args, False)
 
-    @commands.command(name='schedule', pass_context=True)
-    async def schedule_match(self, context, *args):
+    @commands.command(pass_context=True)
+    async def schedule(self, context, *args):
         message = context.message
         channel = message.channel
         await message.delete()
@@ -68,61 +55,73 @@ class ScheduleCog(commands.Cog):
         else:
             await schedule_weekend(channel)
 
-    @tasks.loop(minutes=5.0)
-    async def taskscheck(self):
-        now = get_est_time()
-        await self.check_practice_session(now)
-        await self.check_match_schedule(now)
-
-    async def check_practice_session(self, now):
-        is_us_practice = (now.weekday() == 1 and now.hour == 19)
-        is_eu_practice = (now.weekday() == 3 and now.hour == 15)
-
-        if (is_us_practice or is_eu_practice) and is_hour_starting(now.minute):
-            print(str(now) + f" triggering practice post")
-            server = self.bot.get_guild(self.config['server_id'])
-            tw_role = server.get_role(self.config['tw_roaster_role'])
-            cw_role = server.get_role(self.config['cw_roaster_role'])
-
-            msg = f"{tw_role.mention} {cw_role.mention} "
-            msg += 'EU' if is_eu_practice else 'US'
-            msg += ' Practice time!'
-            msg += '\n\n Please join the call at: https://hangouts.google.com/call/QCQA0ehAWFu_nSYJAdzMAEEI'
-            msg += '\n\n You can use the Google Sheet pinned in the TW and CW general channels to plan the next Match.\nWhile doing that, remember to keep an eye on our meta analysis sheet here: ' + CWC_META_SHEET
-            msg += '\nYou can suggest modifications by adding comments on the sheet.'
-
-            channel = self.bot.get_channel(self.config['practice_channel_id'])
-            await channel.send(msg)
-
-    async def check_match_schedule(self, now):
-        is_match_schedule_time = (now.weekday() == 0 and now.hour == 0)
-
-        if is_match_schedule_time and is_hour_starting(now.minute):
-            print(str(now) + f" triggering schedule post")
-            server = self.bot.get_guild(self.config['server_id'])
-
-            tw_news = self.bot.get_channel(self.config['tw_news_channel'])
-            tw_role = server.get_role(self.config['tw_roaster_role'])
-            await schedule_weekend(tw_news)
-            await tw_news.send(f"{tw_role.mention} please react according to your availability")
-
-            cw_news = self.bot.get_channel(self.config['cw_news_channel'])
-            cw_role = server.get_role(self.config['cw_roaster_role'])
-            await schedule_weekend(cw_news)
-            await cw_news.send(f"{cw_role.mention} please react according to your availability")
-
 
 # Module level functions
-def is_hour_starting(min):
-    return (0 <= min <= 4)
+async def check_pings(bot, now):
+    print('Checking pings')
+    # TODO Restrict query to pings relative to current server only
+    pprint(persistence.get_pings())
+    for ping in persistence.get_pings():
+        print(f'checking ping #{ping.doc_id}')
+        if now.weekday() == ping['weekday'] and now.hour == ping['hour'] and now.minute == ping['minute']:
+            print(str(now) + f" triggering ping #{ping.doc_id}")
+            # server = bot.get_guild(ping['server_id'])
+            channel = bot.get_channel(ping['channel_id'])
+            if ping['add_schedule'] is True:
+                await schedule_weekend(channel)
+            await channel.send(ping['message'])
 
 
-def get_est_time():
+async def create_ping(context, weekdayname, hour, minute, msg, add_schedule):
+    message = context.message
+    await message.delete()
+
+    channel = message.channel
+
+    if weekdayname == '' or hour == '' or minute == '':
+        await channel.send(f"Oops! Weekday and hour are required arguments, please try again")
+        return
+
+    # Check weekeday
+    try:
+        weekdayname = weekdayname.capitalize()
+    except:
+        await channel.send(f"Oops! `{weekdayname}` doesn't look like a week day name, please try again")
+        return
+    if weekdayname in calendar.day_name[:]:
+        weekday = calendar.day_name[:].index(weekdayname)
+    elif weekdayname in calendar.day_abbr[:]:
+        weekday = calendar.day_abbr[:].index(weekdayname)
+    else:
+        await channel.send(
+            f"Oops! `{weekdayname}` is not a full week day name nor an abbreviated version, did you mispell it?")
+        return
+
+    # Check hour
+    if not hour.isdigit() or int(hour) not in range(0, 24):
+        await channel.send(f"Oops! `{hour}` is not a proper hour number in 24h format, please try again")
+        return
+    if not minute.isdigit() or int(minute) not in range(0, 60):
+        await channel.send(f"Oops! `{minute}` is not a proper minute number, please try again")
+        return
+
+    persistence.create_ping(
+        channel.id, channel.guild.id, weekday, hour, minute, msg, add_schedule)
+    await channel.send(f"Setting a schedule check on `{calendar.day_name[weekday]}` at `{hour}:{minute}` with the "
+                       f"following message:\n{msg}")
+
+
+def get_localized_now():
     tz_name = tzlocal.get_localzone().zone
     local_tz = pytz.timezone(tz_name)
     local_time = local_tz.localize(datetime.datetime.now())
-    est_tz = pytz.timezone('US/Eastern')
-    return local_time.astimezone(est_tz)
+
+    config = persistence.get_config(persistence.ConfigName.PINGS)
+
+    if config and config.timezone:
+        wanted_tz = pytz.timezone(config.timezone)
+        local_time = local_time.astimezone(wanted_tz)
+    return local_time
 
 
 async def schedule_weekend(channel):
