@@ -62,11 +62,13 @@ async def check_pings(bot, now):
     # TODO Restrict query to pings relative to current server only
     pprint(persistence.get_pings())
     for ping in persistence.get_pings():
+        # TODO move below to coroutine to ensure pings of the next minute are never skipped
         print(f'checking ping #{ping.doc_id}')
         if now.weekday() == ping['weekday'] and now.hour == ping['hour'] and now.minute == ping['minute']:
             print(str(now) + f" triggering ping #{ping.doc_id}")
             # server = bot.get_guild(ping['server_id'])
             channel = bot.get_channel(ping['channel_id'])
+            # TODO check why channel is None
             if ping['add_schedule'] is True:
                 await schedule_weekend(channel)
             await channel.send(ping['message'])
