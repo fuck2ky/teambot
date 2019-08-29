@@ -66,9 +66,7 @@ async def check_pings(bot, now):
         print(f'checking ping #{ping.doc_id}')
         if now.weekday() == ping['weekday'] and now.hour == ping['hour'] and now.minute == ping['minute']:
             print(str(now) + f" triggering ping #{ping.doc_id}")
-            # server = bot.get_guild(ping['server_id'])
             channel = bot.get_channel(ping['channel_id'])
-            # TODO check why channel is None
             if ping['add_schedule'] is True:
                 await schedule_weekend(channel)
             await channel.send(ping['message'])
@@ -108,7 +106,7 @@ async def create_ping(context, weekdayname, hour, minute, msg, add_schedule):
         return
 
     persistence.create_ping(
-        channel.id, channel.guild.id, weekday, hour, minute, msg, add_schedule)
+        channel.guild.id, channel.id, weekday, hour, minute, msg, add_schedule)
     await channel.send(f"Setting a schedule check on `{calendar.day_name[weekday]}` at `{hour}:{minute}` with the "
                        f"following message:\n{msg}")
 
