@@ -4,6 +4,7 @@ from pprint import pprint
 
 import pytz
 import tzlocal
+import discord
 from discord.ext import commands, tasks
 
 import persistence
@@ -25,7 +26,7 @@ class ScheduleCog(commands.Cog):
         now = get_localized_now()
         await check_pings(self.bot, now)
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def timezone(self, context, timezone=''):
         try:
             pytz.timezone(timezone)
@@ -36,15 +37,15 @@ class ScheduleCog(commands.Cog):
                 f'Sorry, the timezone {timezone} is not valid. Choose one from '
                 f'https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568')
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def addschedule(self, context, weekdayname='', hour='', minute='', *, args=''):
         await create_ping(context, weekdayname, hour, minute, args, True)
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def addping(self, context, weekdayname='', hour='', minute='', *, args=''):
         await create_ping(context, weekdayname, hour, minute, args, False)
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def schedule(self, context, *args):
         message = context.message
         channel = message.channel
@@ -55,14 +56,20 @@ class ScheduleCog(commands.Cog):
         else:
             await schedule_weekend(channel)
 
+    @commands.command()
+    async def listschedules(self, context):
+        await show_pings(context, True)
+
+    @commands.command()
+    async def listpings(self, context):
+        await show_pings(context, False)
+
 
 # Module level functions
 async def check_pings(bot, now):
-    print('Checking pings')
-    # TODO Restrict query to pings relative to current server only
-    pprint(persistence.get_pings())
-    for ping in persistence.get_pings():
-        print(f'checking ping #{ping.doc_id}')
+    print('Checking pings.')
+    pings = persistence.get_pings()
+    for ping in pings:
         if now.weekday() == ping['weekday'] and now.hour == ping['hour'] and now.minute == ping['minute']:
             await do_ping(bot, now, ping)
 
@@ -75,7 +82,27 @@ async def do_ping(bot, now, ping):
     await channel.send(ping['message'])
 
 
+async def show_pings(context, is_schedule_check):
+    name = 'schedule checks' if is_schedule_check else 'pings'
+    print(f'Showing {name}.')
+    pings = persistence.get_pings(is_schedule=is_schedule_check, server_id=context.message.guild.id)
+    embed = discord.Embed(title=f'Configured {name}', colour=discord.Colour.dark_blue())
+    for ping in pings:
+        weekday = ping['weekday']
+        hour = ping['hour']
+        minute = ping['minute']
+        message = ping['message']
+        embed.add_field(
+            name=f'Every {calendar.day_name[weekday]} at {hour}:{minute}',
+            value=message,
+            inline=False
+        )
+    await context.send(embed=embed)
+
+
 async def create_ping(context, weekdayname, hour, minute, msg, add_schedule):
+    print(f'Creating new ping with weekdayname={weekdayname}, hour={hour}, minute={minute}, msg={msg} '
+          f'and add_schedule={add_schedule}')
     message = context.message
     await message.delete()
 

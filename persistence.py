@@ -60,8 +60,23 @@ def create_ping(server_id, channel_id, weekday, hour, minute, msg, add_schedule)
     db_dump()
 
 
-def get_pings():
-    return this.pings.all()
+def get_pings(is_schedule=None, server_id=None):
+    if is_schedule is None and server_id is None:
+        result = this.pings.all()
+    else:
+        queries = []
+        if is_schedule is not None:
+            queries.append((Query().add_schedule == is_schedule))
+        if server_id is not None:
+            queries.append((Query().server_id == server_id))
+        full_query = None
+        for query in queries:
+            if full_query is None:
+                full_query = query
+            else:
+                full_query = full_query & query
+        result = this.pings.search(full_query)
+    return result
 
 
 def set_config(config_name, config_key, config_value):
@@ -81,8 +96,9 @@ def get_config(config_name):
 
 # Utils
 def db_dump():
-    print('\nDb Dump:')
-    for inner_db in this.db.tables():
-        print(f'Database [{inner_db}]:')
-        pprint(this.db.table(inner_db).all())
-        print('')
+    pass
+    # print('\nDb Dump:')
+    # for inner_db in this.db.tables():
+    #     print(f'Database [{inner_db}]:')
+    #     pprint(this.db.table(inner_db).all())
+    #     print('')
