@@ -93,7 +93,7 @@ async def schedule_weekend(channel):
 
 
 async def schedule_day(channel, day, start=0):
-    await send_embed(channel, f'```\n{day}\n```')
+    await channel.send(f'```\n{day}\n```')
 
     times = [t for t in range(start, 21, 3)]
 
