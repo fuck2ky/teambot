@@ -20,14 +20,26 @@ def config_load():
         return json.load(doc)
 
 
+async def get_prefix_(bot, message):
+    """
+    A coroutine that returns a prefix.
+    I have made this a coroutine just to show that it can be done. If you needed async logic in here it can be done.
+    A good example of async logic would be retrieving a prefix from a database.
+    """
+    prefix = ['!']
+    return commands.when_mentioned_or(*prefix)(bot, message)
+
+
 class Bot(commands.Bot):
     def __init__(self, **kwargs):
         super().__init__(
-            command_prefix=self.get_prefix_,
+            command_prefix=get_prefix_,
             description=kwargs.pop('description')
         )
 
         self.config = kwargs.pop('config')
+
+        self.loaded_extensions = set()
 
         self.start_time = None
         self.app_info = None
@@ -43,15 +55,6 @@ class Bot(commands.Bot):
         await self.wait_until_ready()
         self.start_time = datetime.datetime.utcnow()
 
-    async def get_prefix_(self, bot, message):
-        """
-        A coroutine that returns a prefix.
-        I have made this a coroutine just to show that it can be done. If you needed async logic in here it can be done.
-        A good example of async logic would be retrieving a prefix from a database.
-        """
-        prefix = ['!']
-        return commands.when_mentioned_or(*prefix)(bot, message)
-
     async def load_all_extensions(self):
         """
         Attempts to load all bot extensions
@@ -63,7 +66,9 @@ class Bot(commands.Bot):
         cogs = [x.stem for x in Path(f"{dirname}/cogs").glob('*.py')]
         for extension in cogs:
             try:
-                self.load_extension(f'cogs.{extension}')
+                extension_name = f'cogs.{extension}'
+                self.loaded_extensions.add(extension_name)
+                self.load_extension(extension_name)
                 print(f'Cog {extension} loaded')
             except Exception as e:
                 error = f'{extension}\n {type(e).__name__} : {e}'

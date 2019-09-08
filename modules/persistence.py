@@ -12,23 +12,21 @@ def init():
 
     '''
     {
-        'pings': [
-            {
-                'server_id': '123456',
-                'channel_id': '123456',
-                'weekday': 0,
-                'time': 15,
-                'message': '...',
-                'add_schedule': False
-            }
-        ]
+        'server_id': 123456,
+        'channel_id': 123456,
+        'weekday': 0,
+        'time': 15,
+        'message': '...',
+        'add_schedule': False
     }
     '''
     this.pings = this.db.table('pings')
 
     '''
     {
-        '<config_name>': <config_value>
+        
+        'server_id': 123456,
+        '<config_key>': <config_value>
     }
     '''
     this.config = this.db.table('config')
@@ -79,19 +77,19 @@ def get_pings(is_schedule=None, server_id=None):
     return result
 
 
-def set_config(config_name, config_key, config_value):
+def set_config(server_id, config_key, config_value):
     this.config.upsert(
         {
-            'config_name': config_name,
+            'server_id': server_id,
             config_key: config_value
         },
-        Query().config_name == ConfigName.PINGS
+        Query().server_id == server_id
     )
     db_dump()
 
 
-def get_config(config_name):
-    return this.config.get(Query().config_name == config_name)
+def get_config(server_id):
+    return this.config.get(Query().server_id == server_id)
 
 
 # Utils

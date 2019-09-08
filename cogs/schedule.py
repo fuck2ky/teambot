@@ -1,71 +1,37 @@
 import calendar
 import datetime
-from pprint import pprint
 
 import pytz
 import tzlocal
 import discord
 from discord.ext import commands, tasks
 
-import persistence
+from modules import persistence
+from modules.utils import send_embed
+
 
 TASKS_LOOP_FREQ = 60.0
 
 
-class ScheduleCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-        self.config = bot.config
-        self.taskscheck.start()
-
-    def cog_unload(self):
-        self.taskscheck.cancel()
-
-    @tasks.loop(seconds=TASKS_LOOP_FREQ)
-    async def taskscheck(self):
-        now = get_localized_now()
-        await check_pings(self.bot, now)
-
-    @commands.command()
-    async def timezone(self, context, timezone=''):
-        try:
-            pytz.timezone(timezone)
-            persistence.set_config(
-                persistence.ConfigName.PINGS, 'timezone', timezone)
-        except pytz.exceptions.UnknownTimeZoneError:
-            await context.send(
-                f'Sorry, the timezone {timezone} is not valid. Choose one from '
-                f'https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568')
-
-    @commands.command()
-    async def addschedule(self, context, weekdayname='', hour='', minute='', *, args=''):
-        await create_ping(context, weekdayname, hour, minute, args, True)
-
-    @commands.command()
-    async def addping(self, context, weekdayname='', hour='', minute='', *, args=''):
-        await create_ping(context, weekdayname, hour, minute, args, False)
-
-    @commands.command()
-    async def schedule(self, context, *args):
-        message = context.message
-        channel = message.channel
-        await message.delete()
-        if args:
-            for named_day in expand_arguments(args):
-                await schedule_day(channel, named_day)
-        else:
-            await schedule_weekend(channel)
-
-    @commands.command()
-    async def listschedules(self, context):
-        await show_pings(context, True)
-
-    @commands.command()
-    async def listpings(self, context):
-        await show_pings(context, False)
+async def show_timezone(context, timezone):
+    config = persistence.get_config(context.guild.id)
+    if config and config['timezone']:
+        configured_timezone = config['timezone']
+    else:
+        configured_timezone = 'GMT'
+    await send_embed(context, f'The currently configured timezone is `{configured_timezone}`')
 
 
-# Module level functions
+async def set_timezone(context, timezone):
+    try:
+        pytz.timezone(timezone)
+        persistence.set_config(context.guild.id, 'timezone', timezone)
+        await send_embed(context, f'Server timezone correctly set to `{timezone}`')
+    except pytz.exceptions.UnknownTimeZoneError:
+        await send_embed(context, f'Sorry, the timezone `{timezone}` is not valid. Choose one from '
+                                  f'https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568')
+
+
 async def check_pings(bot, now):
     print('Checking pings.')
     pings = persistence.get_pings()
@@ -79,13 +45,13 @@ async def do_ping(bot, now, ping):
     channel = bot.get_channel(ping['channel_id'])
     if ping['add_schedule'] is True:
         await schedule_weekend(channel)
-    await channel.send(ping['message'])
+    await send_embed(channel, ping['message'])
 
 
 async def show_pings(context, is_schedule_check):
     name = 'schedule checks' if is_schedule_check else 'pings'
     print(f'Showing {name}.')
-    pings = persistence.get_pings(is_schedule=is_schedule_check, server_id=context.message.guild.id)
+    pings = persistence.get_pings(is_schedule=is_schedule_check, server_id=context.guild.id)
     embed = discord.Embed(title=f'Configured {name}', colour=discord.Colour.dark_blue())
     for ping in pings:
         weekday = ping['weekday']
@@ -116,29 +82,29 @@ async def create_ping(context, weekdayname, hour, minute, msg, add_schedule):
     try:
         weekdayname = weekdayname.capitalize()
     except:
-        await channel.send(f"Oops! `{weekdayname}` doesn't look like a week day name, please try again")
+        await send_embed(channel, f"Oops! `{weekdayname}` doesn't look like a week day name, please try again")
         return
     if weekdayname in calendar.day_name[:]:
         weekday = calendar.day_name[:].index(weekdayname)
     elif weekdayname in calendar.day_abbr[:]:
         weekday = calendar.day_abbr[:].index(weekdayname)
     else:
-        await channel.send(
-            f"Oops! `{weekdayname}` is not a full week day name nor an abbreviated version, did you mispell it?")
+        await send_embed(channel, f"Oops! `{weekdayname}` is not a full week day name nor an abbreviated version, did "
+                                  f"you mispell it?")
         return
 
     # Check hour
     if not hour.isdigit() or int(hour) not in range(0, 24):
-        await channel.send(f"Oops! `{hour}` is not a proper hour number in 24h format, please try again")
+        await send_embed(channel, f"Oops! `{hour}` is not a proper hour number in 24h format, please try again")
         return
     if not minute.isdigit() or int(minute) not in range(0, 60):
-        await channel.send(f"Oops! `{minute}` is not a proper minute number, please try again")
+        await send_embed(channel, f"Oops! `{minute}` is not a proper minute number, please try again")
         return
 
     persistence.create_ping(
         channel.guild.id, channel.id, weekday, hour, minute, msg, add_schedule)
     name = 'schedule check' if add_schedule else 'ping'
-    await channel.send(f"Setting a {name} on `{calendar.day_name[weekday]}` at `{hour}:{minute}` with the "
+    await send_embed(channel, f"Setting a {name} on `{calendar.day_name[weekday]}` at `{hour}:{minute}` with the "
                        f"following message:\n{msg}")
 
 
@@ -162,7 +128,7 @@ async def schedule_weekend(channel):
 
 
 async def schedule_day(channel, day, start=0):
-    await channel.send(f'```\n{day}\n```')
+    await send_embed(channel, f'```\n{day}\n```')
 
     times = [t for t in range(start, 21, 3)]
 
@@ -173,7 +139,7 @@ async def schedule_day(channel, day, start=0):
             f" | {t_add(time, 6)} - {t_add(time, 9)} EU"
             f" | {t_add(time, 15)} - {t_add(time, 18)} JAP"
         )
-        message = await channel.send(full_time)
+        message = await send_embed(channel, full_time)
         await message.add_reaction('\N{THUMBS UP SIGN}')
         await message.add_reaction('\N{THUMBS DOWN SIGN}')
 
@@ -197,3 +163,52 @@ def t_add(time, to_add):
 
 def setup(bot):
     bot.add_cog(ScheduleCog(bot))
+
+
+class ScheduleCog(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.config = bot.config
+        self.taskscheck.start()
+
+    def cog_unload(self):
+        self.taskscheck.cancel()
+
+    @tasks.loop(seconds=TASKS_LOOP_FREQ)
+    async def taskscheck(self):
+        now = get_localized_now()
+        await check_pings(self.bot, now)
+
+    @commands.command()
+    async def timezone(self, context, timezone=None):
+        if timezone is None:
+            await show_timezone(context, timezone)
+        else:
+            await set_timezone(context, timezone)
+
+    @commands.command()
+    async def addschedule(self, context, weekdayname='', hour='', minute='', *, args=''):
+        await create_ping(context, weekdayname, hour, minute, args, True)
+
+    @commands.command()
+    async def addping(self, context, weekdayname='', hour='', minute='', *, args=''):
+        await create_ping(context, weekdayname, hour, minute, args, False)
+
+    @commands.command()
+    async def schedule(self, context, *args):
+        message = context.message
+        channel = message.channel
+        await message.delete()
+        if args:
+            for named_day in expand_arguments(args):
+                await schedule_day(channel, named_day)
+        else:
+            await schedule_weekend(channel)
+
+    @commands.command()
+    async def listschedules(self, context):
+        await show_pings(context, True)
+
+    @commands.command()
+    async def listpings(self, context):
+        await show_pings(context, False)
