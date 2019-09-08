@@ -1,35 +1,13 @@
 import calendar
-import datetime
-
-import pytz
-import tzlocal
 import discord
 from discord.ext import commands, tasks
 
+from cogs import timezone
 from modules import persistence
 from modules.utils import send_embed
 
 
 TASKS_LOOP_FREQ = 60.0
-
-
-async def show_timezone(context, timezone):
-    config = persistence.get_config(context.guild.id)
-    if config and config['timezone']:
-        configured_timezone = config['timezone']
-    else:
-        configured_timezone = 'GMT'
-    await send_embed(context, f'The currently configured timezone is `{configured_timezone}`')
-
-
-async def set_timezone(context, timezone):
-    try:
-        pytz.timezone(timezone)
-        persistence.set_config(context.guild.id, 'timezone', timezone)
-        await send_embed(context, f'Server timezone correctly set to `{timezone}`')
-    except pytz.exceptions.UnknownTimeZoneError:
-        await send_embed(context, f'Sorry, the timezone `{timezone}` is not valid. Choose one from '
-                                  f'https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568')
 
 
 async def check_pings(bot, now):
@@ -108,19 +86,6 @@ async def create_ping(context, weekdayname, hour, minute, msg, add_schedule):
                        f"following message:\n{msg}")
 
 
-def get_localized_now():
-    tz_name = tzlocal.get_localzone().zone
-    local_tz = pytz.timezone(tz_name)
-    local_time = local_tz.localize(datetime.datetime.now())
-
-    config = persistence.get_config(persistence.ConfigName.PINGS)
-
-    if config and config.timezone:
-        wanted_tz = pytz.timezone(config.timezone)
-        local_time = local_time.astimezone(wanted_tz)
-    return local_time
-
-
 async def schedule_weekend(channel):
     await schedule_day(channel, calendar.day_name[4], 12)
     for day in range(5, 7):
@@ -176,15 +141,8 @@ class ScheduleCog(commands.Cog):
 
     @tasks.loop(seconds=TASKS_LOOP_FREQ)
     async def taskscheck(self):
-        now = get_localized_now()
+        now = timezone.get_localized_now()
         await check_pings(self.bot, now)
-
-    @commands.command()
-    async def timezone(self, context, timezone=None):
-        if timezone is None:
-            await show_timezone(context, timezone)
-        else:
-            await set_timezone(context, timezone)
 
     @commands.command()
     async def addschedule(self, context, weekdayname='', hour='', minute='', *, args=''):
