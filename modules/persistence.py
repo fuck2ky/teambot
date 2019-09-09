@@ -77,6 +77,15 @@ def get_pings(is_schedule=None, server_id=None):
     return result
 
 
+def delete_ping(ping_id):
+    try:
+        this.pings.remove(doc_ids=[int(ping_id)])
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+
 def set_config(server_id, config_key, config_value):
     this.config.upsert(
         {

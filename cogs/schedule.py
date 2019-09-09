@@ -37,7 +37,7 @@ async def show_pings(context, is_schedule_check):
         minute = ping['minute']
         message = ping['message']
         embed.add_field(
-            name=f'Every {calendar.day_name[weekday]} at {hour}:{minute}',
+            name=f'`{ping.doc_id}` Every {calendar.day_name[weekday]} at {hour}:{minute}',
             value=message,
             inline=False
         )
@@ -170,3 +170,10 @@ class ScheduleCog(commands.Cog):
     @commands.command()
     async def listpings(self, context):
         await show_pings(context, False)
+
+    @commands.command()
+    async def deleteping(self, context, ping_id):
+        if persistence.delete_ping(ping_id):
+            await send_embed(context, f'Ping `{ping_id}` deleted.')
+        else:
+            await send_embed(context, f'Could not delete ping `{ping_id}`, did you type the ID correctly?')
