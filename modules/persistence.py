@@ -53,7 +53,7 @@ def create_ping(server_id, channel_id, weekday, hour, minute, msg, add_schedule)
         }
     )
     print(
-        f'\nCreated a schedule check with id {ping_id} on {weekday} at {hour}:{minute} with the following message:'
+        f'Created a schedule check with id {ping_id} on {weekday} at {hour}:{minute} with the following message:'
         f'\n{msg}')
     db_dump()
 

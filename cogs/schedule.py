@@ -23,25 +23,30 @@ async def do_ping(bot, now, ping):
     channel = bot.get_channel(ping['channel_id'])
     if ping['add_schedule'] is True:
         await schedule_weekend(channel)
-    await send_embed(channel, ping['message'])
+    await channel.send(ping['message'])
 
 
-async def show_pings(context, is_schedule_check):
-    name = 'schedule checks' if is_schedule_check else 'pings'
-    print(f'Showing {name}.')
-    pings = persistence.get_pings(is_schedule=is_schedule_check, server_id=context.guild.id)
-    embed = discord.Embed(title=f'Configured {name}', colour=discord.Colour.dark_blue())
+async def show_pings(context):
+    print(f'Showing pings.')
+    pings = persistence.get_pings(server_id=context.guild.id)
+    pings_embed = discord.Embed(title=f'Configured pings', colour=discord.Colour.dark_blue())
+    schedules_embed = discord.Embed(title=f'Configured schedule checks', colour=discord.Colour.dark_blue())
     for ping in pings:
         weekday = ping['weekday']
         hour = ping['hour']
         minute = ping['minute']
         message = ping['message']
+        if ping['add_schedule']:
+            embed = pings_embed
+        else:
+            embed = schedules_embed
         embed.add_field(
             name=f'`{ping.doc_id}` Every {calendar.day_name[weekday]} at {hour}:{minute}',
             value=message,
             inline=False
         )
-    await context.send(embed=embed)
+    await context.send(embed=pings_embed)
+    await context.send(embed=schedules_embed)
 
 
 async def create_ping(context, weekdayname, hour, minute, msg, add_schedule):
@@ -164,12 +169,8 @@ class ScheduleCog(commands.Cog):
             await schedule_weekend(channel)
 
     @commands.command()
-    async def listschedules(self, context):
-        await show_pings(context, True)
-
-    @commands.command()
     async def listpings(self, context):
-        await show_pings(context, False)
+        await show_pings(context)
 
     @commands.command()
     async def deleteping(self, context, ping_id):
