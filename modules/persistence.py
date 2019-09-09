@@ -1,9 +1,12 @@
 import sys
+import os
 from enum import IntEnum
 from pprint import pprint
 from tinydb import TinyDB, Query
 
-DB_FILE = 'data/db.json'
+
+dirname = os.path.dirname(__file__)
+DB_FILE = f"{dirname}/../data/db.json"
 this = sys.modules[__name__]
 
 
