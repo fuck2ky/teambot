@@ -26,25 +26,28 @@ async def do_ping(bot, now, ping):
     await channel.send(ping['message'])
 
 
+def add_field(embed, ping):
+    weekday = ping['weekday']
+    hour = ping['hour']
+    minute = ping['minute']
+    message = ping['message']
+    embed.add_field(
+        name=f'`{ping.doc_id}` Every {calendar.day_name[weekday]} at {hour}:{minute}',
+        value=message,
+        inline=False
+    )
+
+
 async def show_pings(context):
     print(f'Showing pings.')
     pings = persistence.get_pings(server_id=context.guild.id)
     pings_embed = discord.Embed(title=f'Configured pings', colour=discord.Colour.dark_blue())
     schedules_embed = discord.Embed(title=f'Configured schedule checks', colour=discord.Colour.dark_blue())
     for ping in pings:
-        weekday = ping['weekday']
-        hour = ping['hour']
-        minute = ping['minute']
-        message = ping['message']
         if ping['add_schedule']:
-            embed = pings_embed
+            add_field(schedules_embed, ping)
         else:
-            embed = schedules_embed
-        embed.add_field(
-            name=f'`{ping.doc_id}` Every {calendar.day_name[weekday]} at {hour}:{minute}',
-            value=message,
-            inline=False
-        )
+            add_field(pings_embed, ping)
     await context.send(embed=pings_embed)
     await context.send(embed=schedules_embed)
 
