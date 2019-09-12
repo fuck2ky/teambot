@@ -36,6 +36,10 @@ def get_localized_now(server_id):
     return datetime.now(tz)
 
 
+def get_pretty_time(hour, minute):
+    return f'{str(hour).zfill(2)}:{str(minute).zfill(2)}'
+
+
 def setup(bot):
     bot.add_cog(TimezoneCog(bot))
 
@@ -47,7 +51,7 @@ class TimezoneCog(commands.Cog):
     @commands.command()
     async def servertime(self, context):
         now = get_localized_now(context.guild.id)
-        await send_embed(context, f'The server time is `{str(now.hour).zfill(2)}:{str(now.minute).zfill(2)}`')
+        await send_embed(context, f'The server time is `{get_pretty_time(now.hour, now.minute)}`')
 
     @commands.command()
     async def timezone(self, context, timezone=None):

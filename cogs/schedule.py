@@ -33,7 +33,7 @@ def add_field(embed, ping):
     minute = ping['minute']
     message = ping['message']
     embed.add_field(
-        name=f'`{ping.doc_id}` Every {calendar.day_name[weekday]} at {hour}:{minute}',
+        name=f'`{ping.doc_id}` Every {calendar.day_name[weekday]} at {timezone.get_pretty_time(hour, minute)}',
         value=message,
         inline=False
     )
@@ -91,8 +91,8 @@ async def create_ping(context, weekdayname, hour, minute, msg, add_schedule):
     persistence.create_ping(
         channel.guild.id, channel.id, weekday, hour, minute, msg, add_schedule)
     name = 'schedule check' if add_schedule else 'ping'
-    await send_embed(channel, f"Setting a {name} on `{calendar.day_name[weekday]}` at `{hour}:{minute}` with the "
-                       f"following message:\n{msg}")
+    await send_embed(channel, f"Setting a {name} on `{calendar.day_name[weekday]}` at "
+                              f"`{timezone.get_pretty_time(hour, minute)}` with the following message:\n{msg}")
 
 
 async def schedule_weekend(channel):
