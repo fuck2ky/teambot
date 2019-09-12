@@ -102,9 +102,9 @@ async def schedule_weekend(channel):
 
 async def schedule_day(channel, day, start=0):
     day_message = await channel.send(f'```\n{day}\n```')
-    times_iterator = filter(lambda em: em.name.startswith('schedule_'), channel.guild.emojis)
-    time_emojis = [time_emoji for time_emoji in times_iterator]
+    time_emojis = filter(lambda em: em.name.startswith('schedule_'), channel.guild.emojis)
     time_emojis = sorted(time_emojis, key=lambda emoji: emoji.name)
+    time_emojis = [time_emoji for time_emoji in time_emojis]
     if time_emojis:
         for time_emoji in time_emojis:
             await day_message.add_reaction(time_emoji)

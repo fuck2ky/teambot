@@ -12,11 +12,12 @@ class DevCog(commands.Cog):
 
     @commands.command()
     async def test_command(self, context):
-        times_iterator = filter(lambda em: em.name.startswith('schedule_'), context.guild.emojis)
-        time_emojis = [time_emoji for time_emoji in times_iterator]
+        time_emojis = filter(lambda em: em.name.startswith('schedule_'), context.guild.emojis)
         time_emojis = sorted(time_emojis, key=lambda emoji: emoji.name)
-        for emoji in time_emojis:
-            await context.send(f'`{emoji.name}`')
+        time_emojis = [time_emoji for time_emoji in time_emojis]
+        if time_emojis:
+            for emoji in time_emojis:
+                await context.send(f'`{emoji.name}`')
 
     @commands.command()
     async def reload(self, context):
