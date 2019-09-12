@@ -10,10 +10,11 @@ from modules.utils import send_embed
 TASKS_LOOP_FREQ = 60.0
 
 
-async def check_pings(bot, now):
+async def check_pings(bot):
     print('Checking pings.')
     pings = persistence.get_pings()
     for ping in pings:
+        now = timezone.get_localized_now(ping['server_id'])
         if now.weekday() == ping['weekday'] and now.hour == ping['hour'] and now.minute == ping['minute']:
             await do_ping(bot, now, ping)
 
@@ -149,8 +150,7 @@ class ScheduleCog(commands.Cog):
 
     @tasks.loop(seconds=TASKS_LOOP_FREQ)
     async def taskscheck(self):
-        now = timezone.get_localized_now()
-        await check_pings(self.bot, now)
+        await check_pings(self.bot)
 
     @commands.command()
     async def addschedule(self, context, weekdayname='', hour='', minute='', *, args=''):

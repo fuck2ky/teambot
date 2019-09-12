@@ -38,10 +38,6 @@ def init():
 init()
 
 
-class ConfigName(IntEnum):
-    PINGS = 1
-
-
 # APIs
 def create_ping(server_id, channel_id, weekday, hour, minute, msg, add_schedule):
     ping_id = this.pings.insert(

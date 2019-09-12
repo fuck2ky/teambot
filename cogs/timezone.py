@@ -1,5 +1,5 @@
 from discord.ext import commands
-import datetime
+from datetime import datetime
 import pytz
 import tzlocal
 from modules import persistence
@@ -25,17 +25,15 @@ async def set_timezone(context, timezone):
                                   f'https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568')
 
 
-def get_localized_now():
-    tz_name = tzlocal.get_localzone().zone
-    local_tz = pytz.timezone(tz_name)
-    local_time = local_tz.localize(datetime.datetime.now())
-
-    config = persistence.get_config(persistence.ConfigName.PINGS)
-
-    if config and config.timezone:
-        wanted_tz = pytz.timezone(config.timezone)
-        local_time = local_time.astimezone(wanted_tz)
-    return local_time
+def get_localized_now(server_id):
+    timezone = 'GMT'
+    config = persistence.get_config(server_id)
+    if config and config['timezone']:
+        timezone = config['timezone']
+    if timezone.lower() == 'est':
+        timezone = 'America/New_York'
+    tz = pytz.timezone(timezone)
+    return datetime.now(tz)
 
 
 def setup(bot):
@@ -45,6 +43,11 @@ def setup(bot):
 class TimezoneCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command()
+    async def servertime(self, context):
+        now = get_localized_now(context.guild.id)
+        await send_embed(context, f'The server time is `{str(now.hour).zfill(2)}:{str(now.minute).zfill(2)}`')
 
     @commands.command()
     async def timezone(self, context, timezone=None):

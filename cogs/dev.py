@@ -10,6 +10,6 @@ class DevCog(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def reload_extensions(self, context):
+    async def reload(self, context):
         for extension in self.bot.loaded_extensions:
             self.bot.reload_extension(extension)
