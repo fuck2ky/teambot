@@ -6,7 +6,6 @@ from cogs import timezone
 from modules import persistence
 from modules.utils import send_embed
 
-
 TASKS_LOOP_FREQ = 60.0
 
 
@@ -102,29 +101,34 @@ async def schedule_weekend(channel):
 
 
 async def schedule_day(channel, day, start=0):
-    await channel.send(f'```\n{day}\n```')
-
-    times = [t for t in range(start, 21, 3)]
-
-    for time in times:
-        full_time = (
-            f"{t_add(time, 0)} - {t_add(time, 3)} EST"
-            f" | {t_add(time, 5)} - {t_add(time, 8)} UK"
-            f" | {t_add(time, 6)} - {t_add(time, 9)} EU"
-            f" | {t_add(time, 15)} - {t_add(time, 18)} JAP"
-        )
-        message = await send_embed(channel, full_time)
-        await message.add_reaction('\N{THUMBS UP SIGN}')
-        await message.add_reaction('\N{THUMBS DOWN SIGN}')
+    day_message = await channel.send(f'```\n{day}\n```')
+    times_iterator = filter(lambda em: em.name.startswith('schedule_'), channel.guild.emojis)
+    time_emojis = [time_emoji for time_emoji in times_iterator]
+    time_emojis = sorted(time_emojis, key=lambda emoji: emoji.name)
+    if time_emojis:
+        for time_emoji in time_emojis:
+            await day_message.add_reaction(time_emoji)
+    else:
+        times = [t for t in range(start, 21, 3)]
+        for time in times:
+            full_time = (
+                f"{t_add(time, 0)} - {t_add(time, 3)} EST"
+                f" | {t_add(time, 5)} - {t_add(time, 8)} UK"
+                f" | {t_add(time, 6)} - {t_add(time, 9)} EU"
+                f" | {t_add(time, 15)} - {t_add(time, 18)} JAP"
+            )
+            message = await send_embed(channel, full_time)
+            await message.add_reaction('\N{THUMBS UP SIGN}')
+            await message.add_reaction('\N{THUMBS DOWN SIGN}')
 
 
 def expand_arguments(args):
     args_expanded = []
     for arg in args:
         if arg == 'weekend':
+            args_expanded.append(calendar.day_name[4])
             args_expanded.append(calendar.day_name[5])
             args_expanded.append(calendar.day_name[6])
-            args_expanded.append(calendar.day_name[7])
         else:
             args_expanded.append(arg)
     return args_expanded
