@@ -7,6 +7,7 @@ from modules import persistence
 from modules.utils import send_embed
 
 TASKS_LOOP_FREQ = 60.0
+TIMEZONE_DESCRIPTION = 'Times are in 24h format, EST timezone'
 
 
 async def check_pings(bot):
@@ -101,7 +102,7 @@ async def schedule_weekend(channel):
 
 
 async def schedule_day(channel, day, start=0):
-    day_message = await channel.send(f'```\n{day}\n```')
+    day_message = await send_embed(channel, TIMEZONE_DESCRIPTION, day)
     time_emojis = filter(lambda em: em.name.startswith('schedule_'), channel.guild.emojis)
     time_emojis = sorted(time_emojis, key=lambda emoji: emoji.name)
     time_emojis = [time_emoji for time_emoji in time_emojis]

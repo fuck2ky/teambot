@@ -1,5 +1,6 @@
 from discord.ext import commands
-from discord import utils
+from discord import Embed
+import asyncio
 
 
 def setup(bot):
@@ -11,13 +12,11 @@ class DevCog(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def test_command(self, context):
-        time_emojis = filter(lambda em: em.name.startswith('schedule_'), context.guild.emojis)
-        time_emojis = sorted(time_emojis, key=lambda emoji: emoji.name)
-        time_emojis = [time_emoji for time_emoji in time_emojis]
-        if time_emojis:
-            for emoji in time_emojis:
-                await context.send(f'`{emoji.name}`')
+    async def test(self, context):
+        embed = Embed(title='scrim', description='(Times are in 24h format, EST timezone)')
+        message = await context.send(embed=embed)
+        await message.add_reaction('\N{THUMBS UP SIGN}')
+        await message.add_reaction('\N{THUMBS DOWN SIGN}')
 
     @commands.command()
     async def reload(self, context):
