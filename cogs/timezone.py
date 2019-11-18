@@ -41,10 +41,11 @@ def get_pretty_time(hour, minute):
 
 
 def setup(bot):
-    bot.add_cog(TimezoneCog(bot))
+    bot.add_cog(Timezone(bot))
 
 
-class TimezoneCog(commands.Cog):
+class Timezone(commands.Cog):
+    """Timezone-related commands"""
     def __init__(self, bot):
         self.bot = bot
 
@@ -55,6 +56,12 @@ class TimezoneCog(commands.Cog):
 
     @commands.command()
     async def timezone(self, context, timezone=None):
+        """
+        Command to set manage the timezone used by the bot to schedule pings in this server.
+        If used without arguments, it displays the timezone currently in use.
+        If used with a single argument, it will try to parse is as a timezone and set it for the current server. For
+        a list of the possible timezones, look here: https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568
+        """
         if timezone is None:
             await show_timezone(context, timezone)
         else:

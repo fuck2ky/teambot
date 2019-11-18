@@ -25,7 +25,7 @@ async def get_prefix_(bot, message):
     I have made this a coroutine just to show that it can be done. If you needed async logic in here it can be done.
     A good example of async logic would be retrieving a prefix from a database.
     """
-    prefix = ['!']
+    prefix = ['>']
     return commands.when_mentioned_or(*prefix)(bot, message)
 
 
@@ -45,6 +45,8 @@ class Bot(commands.Bot):
 
         self.loop.create_task(self.track_start())
         self.loop.create_task(self.load_all_extensions())
+
+        self.help_command = commands.MinimalHelpCommand(no_category='Others', commands_heading='commands:')
 
     async def track_start(self):
         """

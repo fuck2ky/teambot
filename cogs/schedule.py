@@ -141,10 +141,11 @@ def t_add(time, to_add):
 
 
 def setup(bot):
-    bot.add_cog(ScheduleCog(bot))
+    bot.add_cog(Schedule(bot))
 
 
-class ScheduleCog(commands.Cog):
+class Schedule(commands.Cog):
+    """Commands used to manage pings and schedules"""
     def __init__(self, bot):
         self.bot = bot
         self.config = bot.config
@@ -159,14 +160,47 @@ class ScheduleCog(commands.Cog):
 
     @commands.command()
     async def addschedule(self, context, weekdayname='', hour='', minute='', *, args=''):
+        """
+        Creates a weekly schedule poll in the current channel.
+        `weekdayname` can be a full week day name like "Monday" or an abbreviation like "wed", case insensitive
+        `hour` is the hour of the day, in 24 hour format (0-23)
+        `minute` is the minute of the hour (0-59)
+        `args` is anything you'd like to include in the poll
+
+        Examples:
+        ```>addschedule monday 17 50 Please react with your availability for the match```
+        ```>addschedule Wed 10 30 When you guys want to hangout today?```
+        """
         await create_ping(context, weekdayname, hour, minute, args, True)
 
     @commands.command()
     async def addping(self, context, weekdayname='', hour='', minute='', *, args=''):
+        """
+        Creates a weekly ping in the current channel.
+        `weekdayname` can be a full week day name like "Monday" or an abbreviation like "wed", case insensitive
+        `hour` is the hour of the day, in 24 hour format (0-23)
+        `minute` is the minute of the hour (0-59)
+        `args` is anything you'd like to include in the ping
+
+        Examples:
+        ```>addping Tuesday 15 00 Practice session is starting!```
+        ```>addping thu 19 30 It's this time of the day again```
+        """
         await create_ping(context, weekdayname, hour, minute, args, False)
 
     @commands.command()
     async def schedule(self, context, *args):
+        """
+        Generates a manual schedule poll.
+        If no arguments are provided, a schedule poll will be generated for each weekend day (Friday, Saturday, Sunday).
+        Otherwise, you can provide a list of names separated by space for the schedules generated.
+        To make a schedule name that includes spaces itself, just use normal quotes ""
+
+        Examples:
+        ```>schedule Monday Thursday Friday```
+        ```>schedule Match Practice Meetup```
+        ```>schedule "Match against X" "Internal tournament"```
+        """
         message = context.message
         channel = message.channel
         await message.delete()
@@ -178,10 +212,12 @@ class ScheduleCog(commands.Cog):
 
     @commands.command()
     async def listpings(self, context):
+        """Lists all the pings anche schedule checks configured in this server"""
         await show_pings(context)
 
     @commands.command()
     async def deleteping(self, context, ping_id):
+        """Deletes a ping or schedule check, by passing it's ID as only parameter, as returned by `>listpings`"""
         if persistence.delete_ping(ping_id):
             await send_embed(context, f'Ping `{ping_id}` deleted.')
         else:
