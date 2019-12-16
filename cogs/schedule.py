@@ -1,6 +1,7 @@
 import calendar
 import discord
 from discord.ext import commands, tasks
+from discord.utils import get
 
 from cogs import timezone
 from modules import persistence
@@ -109,6 +110,7 @@ async def schedule_day(channel, day, start=0):
     if time_emojis:
         for time_emoji in time_emojis:
             await day_message.add_reaction(time_emoji)
+        await day_message.add_reaction('\U0000274c')
     else:
         times = [t for t in range(start, 21, 3)]
         for time in times:
