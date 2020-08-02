@@ -1,103 +1,47 @@
-import asyncio
-import datetime
-import json
 import os
-from pathlib import Path
+from os import listdir
+from os.path import isfile, join
+
+import sys
+import traceback
 
 import discord
 from discord.ext import commands
 
+import logging
+from modules import config
+# from modules import embed_help_command
+from modules.help import CustomHelpCommand
 
-dirname = os.path.dirname(__file__)
-
-
-def config_load():
-    with open(f"{dirname}/data/config.json", 'r', encoding='utf-8') as doc:
-        #  Please make sure encoding is correct, especially after editing the config file
-        return json.load(doc)
+COGS_DIR = 'cogs'
 
 
-async def get_prefix_(bot, message):
-    """
-    A coroutine that returns a prefix.
-    I have made this a coroutine just to show that it can be done. If you needed async logic in here it can be done.
-    A good example of async logic would be retrieving a prefix from a database.
-    """
-    prefix = ['>']
-    return commands.when_mentioned_or(*prefix)(bot, message)
-
-
-class Bot(commands.Bot):
-    def __init__(self, **kwargs):
-        super().__init__(
-            command_prefix=get_prefix_,
-            description=kwargs.pop('description')
-        )
-
-        self.config = kwargs.pop('config')
-
-        self.loaded_extensions = set()
-
-        self.start_time = None
-        self.app_info = None
-
-        self.loop.create_task(self.track_start())
-        self.loop.create_task(self.load_all_extensions())
-
-        self.help_command = commands.MinimalHelpCommand(no_category='Others', commands_heading='commands:')
-
-    async def track_start(self):
-        """
-        Waits for the bot to connect to discord and then records the time.
-        Can be used to work out uptime.
-        """
-        await self.wait_until_ready()
-        self.start_time = datetime.datetime.utcnow()
-
-    async def load_all_extensions(self):
-        """
-        Attempts to load all bot extensions
-        """
-        # Load all .py files in /cogs/ as cog extensions
-        await self.wait_until_ready()
-        # ensure that on_ready has completed and finished printing
-        await asyncio.sleep(1)
-        cogs = [x.stem for x in Path(f"{dirname}/cogs").glob('*.py')]
-        for extension in cogs:
-            try:
-                extension_name = f'cogs.{extension}'
-                self.loaded_extensions.add(extension_name)
-                self.load_extension(extension_name)
-                print(f'Cog {extension} loaded')
-            except Exception as e:
-                error = f'{extension}\n {type(e).__name__} : {e}'
-                print(f'failed to load extension {error}')
-            print('-' * 10)
-
-    async def on_ready(self):
-        """
-        This event is called every time the bot connects or resumes connection.
-        """
-        print('-' * 10)
-        self.app_info = await self.application_info()
-        print(f'Logged in as: {self.user.name}\n'
-              f'Using discord.py version: {discord.__version__}\n'
-              f'Owner: {self.app_info.owner}\n'
-              f'Template Maker: SourSpoon / Spoon#7805')
-        print('-' * 10)
-
-    async def on_message(self, message):
-        """
-        This event triggers on every message received by the bot. Including one's that it sent itself.
-        If you wish to have multiple event listeners they can be added in other cogs. All on_message listeners should
-        always ignore bots.
-        """
-        if message.author.bot:
-            return  # ignore all bots
-        await self.process_commands(message)
-
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("discord").setLevel(logging.WARNING)
+help_command = CustomHelpCommand(no_category='Others', commands_heading='commands:')
+bot = commands.Bot(command_prefix=config.BOT_PREFIX, description=config.BOT_DESC, help_command=help_command)
 
 if __name__ == '__main__':
-    config = config_load()
-    bot = Bot(config=config, description=config['description'])
-    bot.run(config['token'])
+    for extension in [f.replace('.py', '') for f in listdir(COGS_DIR) if isfile(join(COGS_DIR, f))]:
+        try:
+            bot.load_extension(COGS_DIR + "." + extension)
+        except (discord.ClientException, ModuleNotFoundError):
+            logging.error(f'Failed to load extension {extension}.')
+            traceback.print_exc()
+
+
+@bot.event
+async def on_ready():
+    logging.info('-------------------------------------------------')
+    logging.info(f'Bot successfully loaded')
+    logging.info(f'Using discord.py version: {discord.__version__}')
+    logging.info(f'Template by Matteo Vettosi (github.com/mvettosi)')
+    logging.info('-------------------------------------------------')
+    servers = list(bot.guilds)
+    logging.info(f'Member of {len(servers)} servers:')
+    for server in servers:
+        logging.info(server.name)
+    logging.info('-------------------------------------------------')
+
+
+bot.run(config.BOT_TOKEN, bot=True, reconnect=True)

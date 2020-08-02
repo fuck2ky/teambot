@@ -150,7 +150,6 @@ class Schedule(commands.Cog):
     """Commands used to manage pings and schedules"""
     def __init__(self, bot):
         self.bot = bot
-        self.config = bot.config
         self.taskscheck.start()
 
     def cog_unload(self):
