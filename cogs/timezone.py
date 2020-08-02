@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 import tzlocal
 from modules import persistence
-from modules.utils import send_embed
+from modules.utils import send_embed, log_command
 
 
 async def show_timezone(context, timezone):
@@ -51,6 +51,7 @@ class Timezone(commands.Cog):
 
     @commands.command()
     async def servertime(self, context):
+        log_command("servertime", context)
         now = get_localized_now(context.guild.id)
         await send_embed(context, f'The server time is `{get_pretty_time(now.hour, now.minute)}`')
 
@@ -62,6 +63,7 @@ class Timezone(commands.Cog):
         If used with a single argument, it will try to parse is as a timezone and set it for the current server. For
         a list of the possible timezones, look here: https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568
         """
+        log_command("timezone", context)
         if timezone is None:
             await show_timezone(context, timezone)
         else:

@@ -1,8 +1,7 @@
+import logging
 import sys
 import os
 from cogs import timezone
-from enum import IntEnum
-from pprint import pprint
 from tinydb import TinyDB, Query
 
 
@@ -52,7 +51,7 @@ def create_ping(server_id, channel_id, weekday, hour, minute, msg, add_schedule)
             'add_schedule': add_schedule
         }
     )
-    print(
+    logging.info(
         f'Created a schedule check with id {ping_id} on {weekday} at {timezone.get_pretty_time(hour, minute)} with '
         f'the following message: \n{msg}')
     db_dump()
@@ -82,7 +81,7 @@ def delete_ping(ping_id):
         this.pings.remove(doc_ids=[int(ping_id)])
         return True
     except Exception as e:
-        print(e)
+        logging.error(e)
         return False
 
 

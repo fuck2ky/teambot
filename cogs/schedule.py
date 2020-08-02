@@ -1,18 +1,20 @@
 import calendar
+import logging
+
 import discord
 from discord.ext import commands, tasks
 from discord.utils import get
 
 from cogs import timezone
 from modules import persistence
-from modules.utils import send_embed
+from modules.utils import send_embed, log_command
 
 TASKS_LOOP_FREQ = 60.0
 TIMEZONE_DESCRIPTION = 'Times are in 24h format, EST timezone'
 
 
 async def check_pings(bot):
-    print('Checking pings.')
+    logging.info('Checking pings.')
     pings = persistence.get_pings()
     for ping in pings:
         now = timezone.get_localized_now(ping['server_id'])
@@ -21,7 +23,7 @@ async def check_pings(bot):
 
 
 async def do_ping(bot, now, ping):
-    print(str(now) + f" triggering ping #{ping.doc_id}")
+    logging.info(str(now) + f" triggering ping #{ping.doc_id}")
     channel = bot.get_channel(ping['channel_id'])
     if ping['add_schedule'] is True:
         await schedule_weekend(channel)
@@ -41,7 +43,7 @@ def add_field(embed, ping):
 
 
 async def show_pings(context):
-    print(f'Showing pings.')
+    logging.info(f'Showing pings.')
     pings = persistence.get_pings(server_id=context.guild.id)
     pings_embed = discord.Embed(title=f'Configured pings', colour=discord.Colour.dark_blue())
     schedules_embed = discord.Embed(title=f'Configured schedule checks', colour=discord.Colour.dark_blue())
@@ -55,7 +57,7 @@ async def show_pings(context):
 
 
 async def create_ping(context, weekdayname, hour, minute, msg, add_schedule):
-    print(f'Creating new ping with weekdayname={weekdayname}, hour={hour}, minute={minute}, msg={msg} '
+    logging.info(f'Creating new ping with weekdayname={weekdayname}, hour={hour}, minute={minute}, msg={msg} '
           f'and add_schedule={add_schedule}')
     message = context.message
     await message.delete()
@@ -172,6 +174,7 @@ class Schedule(commands.Cog):
         ```>addschedule monday 17 50 Please react with your availability for the match```
         ```>addschedule Wed 10 30 When you guys want to hangout today?```
         """
+        log_command("addschedule", context)
         await create_ping(context, weekdayname, hour, minute, args, True)
 
     @commands.command()
@@ -187,6 +190,7 @@ class Schedule(commands.Cog):
         ```>addping Tuesday 15 00 Practice session is starting!```
         ```>addping thu 19 30 It's this time of the day again```
         """
+        log_command("addping", context)
         await create_ping(context, weekdayname, hour, minute, args, False)
 
     @commands.command()
@@ -202,6 +206,7 @@ class Schedule(commands.Cog):
         ```>schedule Match Practice Meetup```
         ```>schedule "Match against X" "Internal tournament"```
         """
+        log_command("schedule", context)
         message = context.message
         channel = message.channel
         await message.delete()
@@ -214,11 +219,13 @@ class Schedule(commands.Cog):
     @commands.command()
     async def listpings(self, context):
         """Lists all the pings anche schedule checks configured in this server"""
+        log_command("listpings", context)
         await show_pings(context)
 
     @commands.command()
     async def deleteping(self, context, ping_id):
         """Deletes a ping or schedule check, by passing it's ID as only parameter, as returned by `>listpings`"""
+        log_command("deleteping", context)
         if persistence.delete_ping(ping_id):
             await send_embed(context, f'Ping `{ping_id}` deleted.')
         else:
